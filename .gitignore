@@ -15,6 +15,7 @@ venv/
 .venv/
 venv311/
 .venv311/
+backend/venv311/    
 
 # =========================
 # Node / Next.js (Frontend)
