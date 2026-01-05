@@ -1,3 +1,5 @@
+https://p2i-frontend.vercel.app/
+
 # AI Image Generator (Next.js + FastAPI)
 
 A simple full-stack AI image generation web app built using **Next.js (frontend)** and **FastAPI (backend)**.  
