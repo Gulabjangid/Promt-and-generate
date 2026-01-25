@@ -1,12 +1,13 @@
 import os
-import replicate
+import random
+from typing import Literal, Optional, List
+
 import google.generativeai as genai
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv, find_dotenv
 from openai import OpenAI
-from typing import Optional
 
 # =========================================================
 # Load environment variables
@@ -14,29 +15,22 @@ from typing import Optional
 load_dotenv(find_dotenv())
 
 # =========================================================
-# Init A4F client
+# Parse multiple A4F API keys (comma-separated)
 # =========================================================
-A4F_API_KEY = os.getenv("api_key")
-if not A4F_API_KEY:
-    raise RuntimeError("A4F api_key not found")
+raw_keys = os.getenv("A4F_API_KEYS") or os.getenv("api_key") or ""
+A4F_API_KEYS: List[str] = [k.strip() for k in raw_keys.split(",") if k.strip()]
 
-a4f_client = OpenAI(
-    base_url="https://api.a4f.co/v1",
-    api_key=A4F_API_KEY,
-)
+if not A4F_API_KEYS:
+    raise RuntimeError("No A4F API key(s) found. Set A4F_API_KEYS or api_key in .env")
 
-# =========================================================
-# Init Replicate client
-# =========================================================
-REPLICATE_API_TOKEN = (
-    os.getenv("REPLICATE_API_TOKEN")
-    or os.getenv("rep_api_key")
-    or os.getenv("REP_API_KEY")
-)
-if not REPLICATE_API_TOKEN:
-    raise RuntimeError("REPLICATE_API_TOKEN not found")
+# One OpenAI client per key so we can rotate between them.
+a4f_clients: List[OpenAI] = [
+    OpenAI(base_url="https://api.a4f.co/v1", api_key=key) for key in A4F_API_KEYS
+]
 
-replicate_client = replicate.Client(api_token=REPLICATE_API_TOKEN)
+def pick_a4f_client() -> OpenAI:
+    """Randomly select an A4F client to spread load across keys."""
+    return random.choice(a4f_clients)
 
 # =========================================================
 # Init Google Gemini (Prompt Enhancer)
@@ -51,11 +45,11 @@ gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 # =========================================================
 # FastAPI app + CORS
 # =========================================================
-app = FastAPI(title="Unified AI Image Generator")
+app = FastAPI(title="Unified AI Image Generator (A4F only)")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # tighten in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,115 +58,175 @@ app.add_middleware(
 # =========================================================
 # Schemas
 # =========================================================
+
+StyleId = Literal["none", "cinematic", "photorealistic", "anime", "fantasy"]
+
 class GenerateRequest(BaseModel):
     prompt: str
-    provider: str            # "replicate" | "a4f"
-    aspect_ratio: Optional[str] = "16:9"
-    enhance: Optional[bool] = True
+    aspect_ratio: str              # "16:9" | "9:16" | "1:1" | "4:3" | "21:9"
+    style_preset: StyleId
+    enhance: bool = False
 
 class GenerateResponse(BaseModel):
     image_url: str
     used_prompt: str
+    used_provider: str
+    used_model: str
 
 # =========================================================
-# Prompt Enhancer (INTERNAL)
+# Style → model routing
 # =========================================================
-SYSTEM_PROMPT = """
-You are a professional cinematic prompt engineer for AI image and video generation.
+# For each style, we define a list of candidate A4F models.
+STYLE_MODEL_MAP: dict[StyleId, list[str]] = {
+    # Balanced / general use, fast and strong
+    "none": [
+        "provider-8/z-image",
+        "provider-4/imagen-3.5",
+    ],
+    # Movie-like, dramatic, high detail
+    "cinematic": [
+        "provider-4/imagen-4",
+        "provider-4/imagen-3.5",
+    ],
+    # Real-world photos, products, people
+    "photorealistic": [
+        "provider-8/z-image",
+        "provider-4/imagen-3.5",
+    ],
+    # Stylized art / anime
+    "anime": [
+        "provider-4/flux-schnell",
+        "provider-4/phoenix",
+    ],
+    # Epic fantasy / 4k style
+    "fantasy": [
+        "provider-4/imagen-4",
+        "provider-4/imagen-3.5",
+    ],
+}
 
-Expand short or vague prompts into rich, detailed, cinematic descriptions.
-Preserve the user's intent.
-Add environment, lighting, mood, camera perspective, realism, and atmosphere.
-Use natural language paragraphs.
-Do not include unsafe or copyrighted content.
-Output only the enhanced prompt.
-give only 30 words in enhancement.
-"""
+def pick_model_for_style(style: StyleId) -> str:
+    """Choose one suitable model for the given style."""
+    candidates = STYLE_MODEL_MAP.get(style) or STYLE_MODEL_MAP["none"]
+    return random.choice(candidates)
 
-def enhance_prompt(user_prompt: str) -> str:
-    try:
-        response = gemini_model.generate_content(
-            f"{SYSTEM_PROMPT}\n\nUser prompt:\n{user_prompt}"
+# =========================================================
+# Helper: map style to style-specific Gemini instructions
+# =========================================================
+def build_style_system_prompt(style: StyleId) -> str:
+    if style == "cinematic":
+        return (
+            "Generate a cinematic, film-like composition with dramatic lighting, "
+            "shallow depth of field, expressive atmosphere, and 4k-level detail."
         )
-        return response.text.strip()
+    if style == "photorealistic":
+        return (
+            "Generate an ultra-photorealistic image with real camera optics, natural "
+            "lighting, accurate materials and skin, and believable photographic detail."
+        )
+    if style == "anime":
+        return (
+            "Generate a high-quality anime-style illustration with clean line art, "
+            "vibrant colors, expressive characters, and studio-grade shading."
+        )
+    if style == "fantasy":
+        return (
+            "Generate an epic fantasy illustration with rich worldbuilding, magical "
+            "elements, dramatic lighting, and highly detailed 4k-quality rendering."
+        )
+    # neutral default
+    return (
+        "Generate a clear, high-quality image that closely follows the user's intent, "
+        "without forcing a specific art style."
+    )
+
+# =========================================================
+# Prompt Enhancer (Gemini)
+# =========================================================
+BASE_SYSTEM_PROMPT = """
+You are a senior prompt engineer specializing in AI image generation.
+
+Goals:
+- Expand short or vague prompts into rich, visual descriptions.
+- Preserve the user's core idea.
+- Add environment, lighting, mood, camera angle, and key visual details.
+- Use natural language sentences (no bullet points or lists).
+- Avoid unsafe or copyrighted content.
+- Output only the enhanced prompt text, nothing else.
+- Keep the result around 30 words: concise, vivid, and specific.
+""".strip()
+
+def enhance_prompt(user_prompt: str, style: StyleId) -> str:
+    style_instructions = build_style_system_prompt(style)
+
+    full_prompt = (
+        BASE_SYSTEM_PROMPT
+        + "\n\nStyle instructions:\n"
+        + style_instructions
+        + "\n\nUser prompt:\n"
+        + user_prompt
+    )
+
+    try:
+        resp = gemini_model.generate_content(full_prompt)
+        text = (resp.text or "").strip()
+        return text if text else user_prompt
     except Exception:
-        # Fail-safe
         return user_prompt
+
+# =========================================================
+# Aspect ratio → size for A4F
+# =========================================================
+def aspect_ratio_to_size(ratio: str) -> str:
+    if ratio == "16:9":
+        return "1280x720"
+    if ratio == "9:16":
+        return "1024x1792"
+    if ratio == "1:1":
+        return "1024x1024"
+    if ratio == "4:3":
+        return "1024x768"
+    if ratio == "21:9":
+        return "1920x820"
+    return "1024x1024"
 
 # =========================================================
 # Unified Image Generation Endpoint
 # =========================================================
 @app.post("/generate-image", response_model=GenerateResponse)
 def generate_image(data: GenerateRequest):
+    """
+    1. Optionally enhance the prompt with Gemini (style-aware).
+    2. Choose an A4F model based on style.
+    3. Use a random A4F API key to spread load.
+    """
+    # Step 1: enhancement
+    final_prompt = enhance_prompt(data.prompt, data.style_preset) if data.enhance else data.prompt
 
-    provider = data.provider.lower()
+    # Step 2: choose model based on style
+    model_id = pick_model_for_style(data.style_preset)
 
-    # 🔑 Enhance prompt internally
-    final_prompt = (
-        enhance_prompt(data.prompt)
-        if data.enhance
-        else data.prompt
-    )
+    # Step 3: choose client (rotating keys)
+    client = pick_a4f_client()
 
-    # =======================
-    # REPLICATE
-    # =======================
-    if provider == "replicate":
-        try:
-            output = replicate_client.run(
-                "google/imagen-4",
-                input={
-                    "prompt": final_prompt,
-                    "aspect_ratio": data.aspect_ratio,
-                    "safety_filter_level": "block_medium_and_above",
-                },
-            )
+    try:
+        size = aspect_ratio_to_size(data.aspect_ratio)
 
-            if isinstance(output, list):
-                image_url = output[0]
-            elif isinstance(output, str):
-                image_url = output
-            elif hasattr(output, "url"):
-                image_url = output.url
-            else:
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Unexpected Replicate output: {output}",
-                )
-
-            return {
-                "image_url": image_url,
-                "used_prompt": final_prompt,
-            }
-
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-
-    # =======================
-    # A4F
-    # =======================
-    elif provider == "a4f":
-        try:
-            size = "1280x720" if data.aspect_ratio == "16:9" else "1024x1024"
-
-            response = a4f_client.images.generate(
-                model="provider-8/z-image",
-                prompt=final_prompt,
-                n=1,
-                response_format="url",
-                size=size,
-            )
-
-            return {
-                "image_url": response.data[0].url,
-                "used_prompt": final_prompt,
-            }
-
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid provider. Use 'replicate' or 'a4f'",
+        response = client.images.generate(
+            model=model_id,
+            prompt=final_prompt,
+            n=1,
+            response_format="url",
+            size=size,
         )
+
+        image_url = response.data[0].url
+
+        return GenerateResponse(
+            image_url=image_url,
+            used_prompt=final_prompt,
+            used_provider="a4f",
+            used_model=model_id,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"A4F error: {e}")
