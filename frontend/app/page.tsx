@@ -1,531 +1,395 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-
-const STYLES = [
-  { id: "none", label: "Normal", },
-  { id: "cinematic", label: "Cinematic" },
-  { id: "photorealistic", label: "Photorealistic" },
-  { id: "anime", label: "Anime"},
-  { id: "fantasy", label: "4k"},
- 
-  
-];
-
-const ASPECT_RATIOS = [
-  { id: "16:9", label: "16:9 (Widescreen)" },
-  { id: "9:16", label: "9:16 (Portrait)" },
-  { id: "1:1", label: "1:1 (Square)" },
-  { id: "4:3", label: "4:3 (Standard)" },
-  { id: "21:9", label: "21:9 (Ultrawide)" },
-];
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import { Sparkles, Zap, Palette, ChevronRight, Star, ArrowRight, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
-  const [prompt, setPrompt] = useState("");
-  const [provider] = useState<"replicate" | "a4f">("replicate");
-  const [selectedStyle, setSelectedStyle] = useState(STYLES[0]);
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState(ASPECT_RATIOS[0]);
-  const [imageUrl, setImageUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isAspectRatioDropdownOpen, setIsAspectRatioDropdownOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [activePrompt, setActivePrompt] = useState(0);
+  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
+  const [visibleItems, setVisibleItems] = useState<number[]>([]);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const aspectRatioDropdownRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
-      if (
-        aspectRatioDropdownRef.current &&
-        !aspectRatioDropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsAspectRatioDropdownOpen(false);
-      }
+  const prompts = [
+    {
+      text: "A serene mountain landscape at sunset with golden orange and purple clouds",
+      image: "/sample-1.jpg"
+    },
+    {
+      text: "A futuristic cyberpunk city at night with neon holographic billboards",
+      image: "/sample-2.jpg"
+    },
+    {
+      text: "An ethereal magical forest with bioluminescent glowing plants",
+      image: "/sample-3.jpg"
+    },
+    {
+      text: "A majestic dragon soaring through storm clouds with lightning",
+      image: "/sample-4.jpg"
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+  ];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      setError("Please describe your vision first.");
-      return;
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivePrompt((prev) => (prev + 1) % prompts.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [prompts.length]);
+
+  const features = [
+    {
+      icon: Sparkles,
+      title: "Intelligent Generation",
+      description: "Advanced AI models that understand context and create stunning visuals from your imagination"
+    },
+    {
+      icon: Zap,
+      title: "Instant Results",
+      description: "Generate high-quality images in seconds, iterate rapidly on your creative vision"
+    },
+    {
+      icon: Palette,
+      title: "Boundless Styles",
+      description: "Photorealistic, abstract, fantasy, anime, and every art style imaginable at your fingertips"
     }
+  ];
 
-    setLoading(true);
-    setError("");
-    setImageUrl("");
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt,
-          provider,
-          style_preset: selectedStyle.id,
-          aspect_ratio: selectedAspectRatio.id,
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || "Backend error");
-      }
-
-      const data = await response.json();
-      setImageUrl(data.image_url);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!imageUrl) return;
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `creation-${Date.now()}.png`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const benefits = [
+    { text: "No artistic skills required" },
+    { text: "Commercial-use rights included" },
+    { text: "Unlimited generations" },
+    { text: "Advanced editing tools" }
+  ];
 
   return (
-    <>
-      <div className="min-h-screen bg-[#020205] text-gray-200 font-sans selection:bg-indigo-500/30 overflow-x-hidden">
-        {/* background */}
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.18),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(15,23,42,0.95),_#020205_70%)]" />
-
-          {/* floating white dots */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="floating-dot dot-1" />
-            <div className="floating-dot dot-2" />
-            <div className="floating-dot dot-3" />
-            <div className="floating-dot dot-4" />
-            <div className="floating-dot dot-5" />
-            <div className="floating-dot dot-6" />
-            <div className="floating-dot dot-7" />
-            <div className="floating-dot dot-8" />
+    <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      {/* Navigation */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border' : ''
+      }`}>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-bold tracking-tight">Imagine</span>
           </div>
+          <div className="hidden md:flex items-center gap-12">
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300">Features</a>
+            <a href="#demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300">How it works</a>
+            <a href="#gallery" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300">Gallery</a>
+          </div>
+          <Link href="/main">
+            <Button className="bg-primary hover:bg-primary/90 transition-all duration-300 rounded-full px-6 font-medium">
+              Get Started
+            </Button>
+          </Link>
+        </div>
+      </nav>
 
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-15 mix-blend-soft-light" />
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+        {/* Gradient background - optimized */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/30 rounded-full blur-3xl opacity-40"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent/20 rounded-full blur-3xl opacity-30"></div>
         </div>
 
-        <main className="relative z-10 max-w-5xl mx-auto px-6 py-20 flex flex-col items-center justify-center min-h-[90vh]">
-          {/* header */}
-          <div className="text-center mb-12 space-y-3">
-            <h1 className="heading-slide text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
-              Imagine.
-            </h1>
-            <p className="subheading-fade text-gray-400 text-xs md:text-sm tracking-widest uppercase">
-              AI Powered Creative Engine
+        <div className="relative z-10 max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+          {/* Left side - Content */}
+          <div className="flex flex-col gap-8 fade-in-up">
+            <div className="inline-flex items-center gap-2 w-fit px-4 py-2 rounded-full bg-secondary/40 border border-border">
+              <Star className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium text-secondary-foreground">Powered by latest AI models</span>
+            </div>
+
+            <div className="space-y-4">
+              <h1 className="text-6xl md:text-7xl font-bold leading-tight tracking-tight">
+                <span className="block mb-2">Create Stunning</span>
+                <span className="gradient-text text-6xl md:text-7xl font-bold">Images from Text</span>
+              </h1>
+              <p className="text-xl text-muted-foreground leading-relaxed max-w-lg font-light">
+                Transform your imagination into reality. Generate unlimited unique artwork in seconds using cutting-edge artificial intelligence.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg font-semibold rounded-full px-8 transition-all duration-300">
+                Start Creating
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+              <Button size="lg" variant="outline" className="border-border hover:border-primary/50 hover:bg-primary/5 text-lg font-semibold rounded-full px-8 bg-transparent transition-all duration-300">
+                View Demo
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 pt-8">
+              <div>
+                <p className="text-3xl font-bold">500K+</p>
+                <p className="text-sm text-muted-foreground font-light">Images Created</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold">50K+</p>
+                <p className="text-sm text-muted-foreground font-light">Active Creators</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right side - Image showcase */}
+          <div className="relative h-96 md:h-[500px] fade-in">
+            <div className="absolute inset-0 rounded-2xl overflow-hidden border border-border bg-card/50 backdrop-blur-sm p-4 group cursor-pointer">
+              <Image
+                src={prompts[activePrompt].image || "/placeholder.svg"}
+                alt="Generated AI image"
+                fill
+                className="object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
+                priority
+              />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-background via-transparent to-transparent opacity-40"></div>
+            </div>
+
+            {/* Image indicators */}
+            <div className="absolute bottom-8 left-8 right-8 flex gap-2 z-20">
+              {prompts.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActivePrompt(index)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    index === activePrompt ? 'bg-primary w-8' : 'bg-muted w-2 hover:bg-muted-foreground'
+                  }`}
+                  aria-label={`View prompt ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Prompt text */}
+            <div className="absolute -bottom-24 left-0 right-0 text-center">
+              <p className="text-sm text-muted-foreground italic font-light">"{prompts[activePrompt].text}"</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20 px-6 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-6">
+            {benefits.map((benefit, index) => (
+              <div key={index} className="flex items-start gap-3 fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <CheckCircle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                <span className="text-sm font-medium text-foreground">{benefit.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-24 px-6 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
+              Powerful Features
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
+              Everything you need to bring your creative vision to life
             </p>
           </div>
 
-          {/* bar */}
-          <div className="w-full relative group">
-            <div
-              className={`
-                relative w-full bg-[#030614]/80 backdrop-blur-2xl 
-                border border-slate-900 rounded-[36px] px-6 py-5
-                shadow-[0_0_80px_-30px_rgba(15,23,42,1)]
-                flex flex-col md:flex-row items-stretch gap-4
-                transition-all duration-300
-                group-hover:border-blue-500/70 group-hover:bg-[#040818]/95
-              `}
-            >
-              {/* INPUT – single box with 3D hover and glow */}
-              <div className="flex-1 flex items-stretch input-3d-container perspective">
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe your imagination..."
-                  className="input-3d-glow w-full min-h-[130px] md:min-h-[100px] bg-[#020824] text-base md:text-lg placeholder-gray-500/80 rounded-2xl px-6 py-4 border border-[#0b1536] focus:outline-none resize-none scrollbar-hide font-medium transition-all duration-300 focus:border-blue-500/50 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent"
-                  disabled={loading}
-                />
-              </div>
-
-              {/* RIGHT SIDE – buttons in row, generate button below */}
-              <div className="flex flex-col w-full md:w-auto gap-3" ref={dropdownRef}>
-                {/* style and aspect ratio buttons in a row */}
-                <div className="flex gap-3 w-full md:w-[260px]">
-                  {/* style button */}
-                  <div className="relative flex-1">
-                    <button
-                      type="button"
-                      onClick={() => setIsDropdownOpen((v) => !v)}
-                      className="w-full h-11 flex items-center justify-between gap-2 px-4 rounded-2xl bg-[#05091e] hover:bg-[#070d27] border border-[#151b3b] text-xs transition-colors duration-200"
-                    >
-                      <span className="flex items-center gap-2">
-                        
-                        <span className="truncate text-left bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
-                          {selectedStyle.label}
-                        </span>
-                      </span>
-                      <svg
-                        className={`w-3 h-3 text-gray-400 transition-transform ${
-                          isDropdownOpen ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-
-                    {isDropdownOpen && (
-                      <div className="absolute left-0 right-0 mt-2 bg-[#020617] border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-64 overflow-y-auto">
-                        <div className="p-1">
-                          <div className="px-3 py-2 text-[10px] uppercase text-gray-500 font-bold tracking-wider">
-                            Select Style
-                          </div>
-                          {STYLES.map((style) => (
-                            <button
-                              key={style.id}
-                              onClick={() => {
-                                setSelectedStyle(style);
-                                setIsDropdownOpen(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-3 transition-colors ${
-                                selectedStyle.id === style.id
-                                  ? "bg-slate-800 text-white"
-                                  : "text-gray-400 hover:bg-slate-800/60 hover:text-gray-100"
-                              }`}
-                            >
-                             
-                              {style.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+          <div className="grid md:grid-cols-3 gap-8">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={index}
+                  onMouseEnter={() => setHoveredFeature(index)}
+                  onMouseLeave={() => setHoveredFeature(null)}
+                  className={`group p-8 rounded-xl border transition-all duration-300 cursor-pointer card-hover ${
+                    hoveredFeature === index
+                      ? 'border-primary/50 bg-primary/5'
+                      : 'border-border bg-card/30'
+                  }`}
+                >
+                  <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Icon className="w-7 h-7 text-primary-foreground" />
                   </div>
-
-                  {/* aspect ratio button */}
-                  <div className="relative flex-1" ref={aspectRatioDropdownRef}>
-                    <button
-                      type="button"
-                      onClick={() => setIsAspectRatioDropdownOpen((v) => !v)}
-                      className="w-full h-11 flex items-center justify-between gap-2 px-4 rounded-2xl bg-[#05091e] hover:bg-[#070d27] border border-[#151b3b] text-xs transition-colors duration-200"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="truncate text-left bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
-                          {selectedAspectRatio.label}
-                        </span>
-                      </span>
-                      <svg
-                        className={`w-3 h-3 text-gray-400 transition-transform ${
-                          isAspectRatioDropdownOpen ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-
-                    {isAspectRatioDropdownOpen && (
-                      <div className="absolute left-0 right-0 mt-2 bg-[#020617] border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-64 overflow-y-auto">
-                        <div className="p-1">
-                          <div className="px-3 py-2 text-[10px] uppercase text-gray-500 font-bold tracking-wider">
-                            Select Aspect Ratio
-                          </div>
-                          {ASPECT_RATIOS.map((ratio) => (
-                            <button
-                              key={ratio.id}
-                              onClick={() => {
-                                setSelectedAspectRatio(ratio);
-                                setIsAspectRatioDropdownOpen(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-3 transition-colors ${
-                                selectedAspectRatio.id === ratio.id
-                                  ? "bg-slate-800 text-white"
-                                  : "text-gray-400 hover:bg-slate-800/60 hover:text-gray-100"
-                              }`}
-                            >
-                              {ratio.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <h3 className="text-xl font-bold mb-3 tracking-tight">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed font-light">{feature.description}</p>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
-                {/* enhance and generate row */}
-                <div className="flex gap-2 w-full">
-                  {/* enhance button with sparkling star */}
-                  <button
-                    title="Enhance your prompt with AI"
-                    className="h-11 px-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 bg-[#05091e] hover:bg-[#070d27] border border-[#151b3b] transition-colors duration-200"
-                  >
-                    <svg
-                      className="w-5 h-5 animate-pulse"
-                      fill="url(#headingGradient)"
-                      viewBox="0 0 24 24"
-                    >
-                      <defs>
-                        <linearGradient id="headingGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" style={{ stopColor: "white", stopOpacity: 1 }} />
-                          <stop offset="100%" style={{ stopColor: "white", stopOpacity: 0.4 }} />
-                        </linearGradient>
-                      </defs>
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                    <svg
-                      className="w-2 h-2 absolute animate-bounce"
-                      style={{ top: "8px", left: "18px" }}
-                      fill="white"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle cx="12" cy="12" r="2" />
-                    </svg>
-                  </button>
-                  {/* generate button */}
-                  <button
-                    onClick={handleGenerate}
-                    disabled={loading}
-                    className="flex-1 h-11 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 bg-[#05091e] hover:bg-[#070d27] border border-[#151b3b] transition-colors duration-200"
-                  >
-                    {loading ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">Creating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">Generate</span>
-                        <svg
-                          className="w-4 h-4"
-                          fill="url(#headingGradient2)"
-                          viewBox="0 0 24 24"
-                          stroke="none"
-                        >
-                          <defs>
-                            <linearGradient id="headingGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" style={{ stopColor: "white", stopOpacity: 1 }} />
-                              <stop offset="100%" style={{ stopColor: "white", stopOpacity: 0.4 }} />
-                            </linearGradient>
-                          </defs>
-                          <path
-                            d="M14 5l7 7m0 0l-7 7m7-7H3"
-                          />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
-                <div className="absolute -bottom-6 left-8 text-red-300 text-xs flex items-center gap-2 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
-                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                  {error}
-                </div>
-              )}
-            </div>
-
-            {/* glow */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-black via-[#020617] to-black rounded-[40px] blur opacity-30 group-hover:opacity-50 transition-opacity duration-700 -z-10"></div>
+      {/* How it works Section */}
+      <section id="demo" className="py-24 px-6 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
+              How It Works
+            </h2>
+            <p className="text-lg text-muted-foreground font-light">
+              Three simple steps to create amazing images
+            </p>
           </div>
 
-          {imageUrl && (
-            <div className="mt-16 w-full animate-emerge perspective-container">
-              <div className="card-3d group relative w-full aspect-video bg-[#050505] rounded-3xl border border-white/10 shadow-2xl overflow-hidden cursor-default">
-                <img
-                  src={imageUrl}
-                  alt="AI Generated"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
-                  <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                    <h3 className="text-white font-medium text-lg mb-1">
-                      {selectedStyle.label}
-                    </h3>
-                    <p className="text-gray-300 text-sm line-clamp-1 mb-4 opacity-80">
-                      {prompt}
-                    </p>
-                    <button
-                      onClick={handleDownload}
-                      className="px-6 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-full text-sm text-white font-medium transition-colors flex items-center gap-2 w-fit"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                      </svg>
-                      Download Asset
-                    </button>
+          <div className="grid md:grid-cols-3 gap-12">
+            {[
+              {
+                step: "01",
+                title: "Enter Your Prompt",
+                description: "Describe the image you want to create in your own words"
+              },
+              {
+                step: "02",
+                title: "AI Creates Magic",
+                description: "Our advanced models generate multiple variations instantly"
+              },
+              {
+                step: "03",
+                title: "Refine & Download",
+                description: "Upscale, edit, or generate more variations of your favorite"
+              }
+            ].map((item, index) => (
+              <div key={index} className="relative fade-in-up" style={{ animationDelay: `${index * 150}ms` }}>
+                <div className="mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <span className="text-2xl font-bold text-primary-foreground tracking-tight">{item.step}</span>
                   </div>
                 </div>
+                <h3 className="text-2xl font-bold mb-3 tracking-tight">{item.title}</h3>
+                <p className="text-muted-foreground leading-relaxed font-light">{item.description}</p>
+                {index < 2 && (
+                  <ChevronRight className="hidden md:block absolute -right-8 top-8 w-6 h-6 text-border" />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Interactive demo box */}
+          <div className="mt-20 p-8 rounded-xl border border-border bg-card/40 glass-effect card-hover">
+            <div className="mb-6">
+              <label className="block text-base font-semibold mb-4 tracking-tight">Try it now:</label>
+              <div className="flex gap-3 flex-col sm:flex-row">
+                <input
+                  type="text"
+                  placeholder="Describe the image you want to create..."
+                  className="flex-1 px-4 py-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 font-light"
+                  defaultValue="A serene waterfall in a misty forest"
+                />
+                <Button className="bg-primary hover:bg-primary/90 transition-all duration-300 rounded-lg font-medium whitespace-nowrap">Generate</Button>
               </div>
             </div>
-          )}
-        </main>
-      </div>
+            <p className="text-sm text-muted-foreground font-light">Your images are generated instantly and ready to use commercially.</p>
+          </div>
+        </div>
+      </section>
 
-      <style jsx global>{`
-        @keyframes emerge {
-          from {
-            opacity: 0;
-            transform: scale(0.95) translateY(40px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-        .animate-emerge {
-          animation: emerge 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        }
+      {/* Gallery Section */}
+      <section id="gallery" className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">Latest Creations</h2>
+            <p className="text-lg text-muted-foreground font-light">Inspiration from our community</p>
+          </div>
 
-        @keyframes slideText {
-          0% {
-            opacity: 0;
-            transform: translateY(18px);
-          }
-          40% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .heading-slide {
-          opacity: 0;
-          animation: slideText 1s ease-out forwards;
-        }
-        .subheading-fade {
-          opacity: 0;
-          animation: slideText 0.8s ease-out 0.4s forwards;
-        }
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {prompts.map((prompt, index) => (
+              <div key={index} className="group relative h-72 rounded-xl overflow-hidden cursor-pointer border border-border card-hover fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <Image
+                  src={prompt.image || "/placeholder.svg"}
+                  alt={prompt.text}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                  <p className="text-sm text-foreground line-clamp-2 font-light">{prompt.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-        .perspective-container {
-          perspective: 1000px;
-        }
-        .card-3d {
-          transition: transform 0.1s;
-          transform-style: preserve-3d;
-        }
-        .card-3d:hover {
-          transform: rotateX(2deg) rotateY(0deg) scale(1.01);
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
+      {/* CTA Section */}
+      <section className="py-24 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10 rounded-3xl"></div>
+        </div>
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight text-balance">
+            Ready to Start Creating?
+          </h2>
+          <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto font-light">
+            Join thousands of creators, designers, and artists using AI to bring their visions to life.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg font-semibold rounded-full px-8 transition-all duration-300">
+              Get Started Free
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <Button size="lg" variant="outline" className="border-border hover:border-primary/50 hover:bg-primary/5 text-lg font-semibold rounded-full px-8 bg-transparent transition-all duration-300">
+              View Pricing
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mt-6 font-light">No credit card required. Start with 5 free generations.</p>
+        </div>
+      </section>
 
-        /* Floating dots animation */
-        @keyframes floatDot {
-          0% {
-            transform: translate3d(0, 0, 0);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          50% {
-            transform: translate3d(15px, -25px, 0);
-          }
-          100% {
-            transform: translate3d(0, -50px, 0);
-            opacity: 0;
-          }
-        }
-
-        .floating-dot {
-          position: absolute;
-          width: 3px;
-          height: 3px;
-          border-radius: 9999px;
-          background: rgba(255, 255, 255, 0.7);
-          box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-          animation: floatDot 10s ease-in-out infinite;
-        }
-
-        .floating-dot.dot-1 { top: 10%; left: 15%; opacity: 0.4; animation-duration: 12s; animation-delay: 0s; }
-        .floating-dot.dot-2 { top: 25%; left: 70%; opacity: 0.5; animation-duration: 14s; animation-delay: 1s; }
-        .floating-dot.dot-3 { top: 60%; left: 30%; opacity: 0.35; animation-duration: 16s; animation-delay: 2s; }
-        .floating-dot.dot-4 { top: 80%; left: 80%; opacity: 0.45; animation-duration: 18s; animation-delay: 3s; }
-        .floating-dot.dot-5 { top: 40%; left: 50%; opacity: 0.25; animation-duration: 20s; animation-delay: 1.5s; }
-        .floating-dot.dot-6 { top: 15%; left: 85%; opacity: 0.3; animation-duration: 13s; animation-delay: 2.5s; }
-        .floating-dot.dot-7 { top: 75%; left: 20%; opacity: 0.35; animation-duration: 17s; animation-delay: 0.8s; }
-        .floating-dot.dot-8 { top: 50%; left: 10%; opacity: 0.3; animation-duration: 19s; animation-delay: 2.2s; }
-
-        /* 3D Input Glow Animation */
-        @keyframes inputGlow {
-          0% {
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.3), inset 0 0 20px rgba(37, 99, 235, 0.1);
-          }
-          50% {
-            box-shadow: 0 0 40px rgba(37, 99, 235, 0.6), inset 0 0 30px rgba(37, 99, 235, 0.2);
-          }
-          100% {
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.3), inset 0 0 20px rgba(37, 99, 235, 0.1);
-          }
-        }
-
-        @keyframes float3d {
-          0%, 100% {
-            transform: translateY(0px) rotateX(0deg);
-          }
-          50% {
-            transform: translateY(-4px) rotateX(1deg);
-          }
-        }
-
-        .input-3d-container {
-          perspective: 1200px;
-        }
-
-        .input-3d-glow {
-          animation: inputGlow 3s ease-in-out infinite, float3d 4s ease-in-out infinite;
-          transform-style: preserve-3d;
-          will-change: transform, box-shadow;
-        }
-
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
-    </>
+      {/* Footer */}
+      <footer className="border-t border-border py-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
+            <div>
+              <h3 className="font-bold mb-4 tracking-tight">Imagine</h3>
+              <p className="text-sm text-muted-foreground font-light">Transform your imagination into stunning visuals with AI.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4 tracking-tight">Product</h4>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">Features</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">Pricing</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">API</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4 tracking-tight">Company</h4>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">About</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">Blog</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4 tracking-tight">Legal</h4>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">Privacy</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">Terms</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors duration-300 font-light">License</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between">
+            <p className="text-sm text-muted-foreground font-light">© 2025 Imagine. All rights reserved.</p>
+            <div className="flex gap-8 mt-6 md:mt-0">
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 font-light">Twitter</a>
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 font-light">Discord</a>
+              <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 font-light">GitHub</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

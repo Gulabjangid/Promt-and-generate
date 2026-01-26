@@ -73,6 +73,13 @@ class GenerateResponse(BaseModel):
     used_provider: str
     used_model: str
 
+class EnhanceRequest(BaseModel):
+    prompt: str
+    style_preset: StyleId
+
+class EnhanceResponse(BaseModel):
+    enhanced_prompt: str
+
 # =========================================================
 # Style → model routing
 # =========================================================
@@ -230,3 +237,12 @@ def generate_image(data: GenerateRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"A4F error: {e}")
+
+# =========================================================
+# Enhance Prompt Endpoint
+# =========================================================
+@app.post("/enhance-prompt", response_model=EnhanceResponse)
+def enhance_prompt_endpoint(data: EnhanceRequest):
+    """Enhance the user's prompt using Gemini with style guidance."""
+    enhanced = enhance_prompt(data.prompt, data.style_preset)
+    return EnhanceResponse(enhanced_prompt=enhanced)  
