@@ -153,9 +153,10 @@ export default function Home() {
         <main className="relative z-10 max-w-5xl mx-auto px-6 py-20 flex flex-col items-center justify-center min-h-[90vh]">
           {/* header */}
           <div className="text-center mb-12 space-y-3">
-            <h1 className="heading-slide text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
+            <h1 className="heading-slide text-5xl md:text-6xl   leading-[1.2]   font-bold tracking-tight bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
               Imagine.
             </h1>
+            <div> </div>
             <p className="subheading-fade text-gray-400 text-xs md:text-sm tracking-widest uppercase">
               AI Powered Creative Engine
             </p>
