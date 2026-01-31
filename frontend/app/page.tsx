@@ -183,10 +183,10 @@ export default function Home() {
       {/* Hero Section */}
       <section id="home" className="relative min-h-screen flex items-center justify-center pt-32 overflow-hidden">
         {/* Gradient background - optimized */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/30 rounded-full blur-3xl opacity-40"></div>
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent/20 rounded-full blur-3xl opacity-30"></div>
-        </div>
+        </div> */}
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center w-full">
           {/* Left side - Content */}
@@ -364,7 +364,7 @@ export default function Home() {
           </div>
 
           {/* Interactive demo box */}
-          <div className="mt-20 p-8 rounded-xl border border-primary/30 bg-card/40 backdrop-blur-sm hover:border-primary/60 transition-all duration-300 shadow-lg hover:shadow-primary/20">
+          {/* <div className="mt-20 p-8 rounded-xl border border-primary/30 bg-card/40 backdrop-blur-sm hover:border-primary/60 transition-all duration-300 shadow-lg hover:shadow-primary/20">
             <div className="mb-6">
               <label className="block text-base font-semibold mb-4 tracking-tight">Try it now:</label>
               <div className="flex gap-3 flex-col sm:flex-row">
@@ -378,7 +378,7 @@ export default function Home() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground font-light">Your images are generated instantly and ready to use commercially.</p>
-          </div>
+          </div> */}
         </div>
       </section>
 
@@ -427,11 +427,11 @@ export default function Home() {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-primary/30 hover:border-primary/60 hover:bg-primary/10 text-foreground font-semibold rounded-full px-8 transition-all duration-300 transform hover:scale-105 active:scale-95 text-base">
+            {/* <Button size="lg" variant="outline" className="border-primary/30 hover:border-primary/60 hover:bg-primary/10 text-foreground font-semibold rounded-full px-8 transition-all duration-300 transform hover:scale-105 active:scale-95 text-base">
               View Pricing
-            </Button>
+            </Button> */}
           </div>
-          <p className="text-sm text-muted-foreground mt-6 font-light">No credit card required. Start with 5 free generations.</p>
+          {/* <p className="text-sm text-muted-foreground mt-6 font-light">No credit card required. Start with 5 free generations.</p> */}
         </div>
       </section>
 
@@ -469,12 +469,12 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-primary/20 pt-8 flex flex-col md:flex-row items-center justify-between">
-            <p className="text-sm text-muted-foreground font-light">© 2025 Imagine. All rights reserved.</p>
-            <div className="flex gap-8 mt-6 md:mt-0">
+            <p className="text-sm text-muted-foreground font-light">© 2026 Imagine. All rights reserved.</p>
+            {/* <div className="flex gap-8 mt-6 md:mt-0">
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300 font-light">Twitter</a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300 font-light">Discord</a>
               <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300 font-light">GitHub</a>
-            </div>
+            </div> */}
           </div>
         </div>
       </footer>
