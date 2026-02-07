@@ -119,23 +119,15 @@ export default function Home() {
     if (!imageUrl) return;
     try {
       const res = await fetch(imageUrl);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch image: ${res.status}`);
-      }
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `creation-${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `creation-${Date.now()}.png`;
+      a.click();
       window.URL.revokeObjectURL(url);
-    } catch (e: any) {
-      console.error("Download error:", e);
-      // Fallback: try opening in new tab
-      setError("Opening image in new tab...");
-      window.open(imageUrl, '_blank');
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -410,31 +402,27 @@ export default function Home() {
                     <p className="text-gray-300 text-sm line-clamp-1 mb-4 opacity-80">
                       {prompt}
                     </p>
+                    <button
+                      onClick={handleDownload}
+                      className="px-6 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-full text-sm text-white font-medium transition-colors flex items-center gap-2 w-fit"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      Download Asset
+                    </button>
                   </div>
                 </div>
-              </div>
-              
-              {/* Download button below image */}
-              <div className="mt-6 flex justify-center">
-                <button
-                  onClick={handleDownload}
-                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-full text-white font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    />
-                  </svg>
-                  Download Image
-                </button>
               </div>
             </div>
           )}
