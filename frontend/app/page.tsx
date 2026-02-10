@@ -161,17 +161,17 @@ export default function Home() {
             {/* Right side - Login, Sign-up */}
             <div className="flex items-center gap-3 flex-shrink-0">
               {/* Login Button */}
-              <button 
+              {/* <button 
                 className="text-white font-medium hover:bg-white/5 rounded-md px-6 h-10 text-[15px] border border-[#2a2d35] hover:border-gray-600 transition-all whitespace-nowrap"
               >
                 Login
-              </button>
+              </button> */}
 
               {/* Sign-up Button */}
               <Link href="/main">
-                <button className="bg-[white] hover:bg-[purple] text-black font-semibold rounded-md px-6 h-10 text-[15px] transition-all duration-200 shadow-lg whitespace-nowrap">
+                {/* <button className="bg-[white] hover:bg-[purple] text-black font-semibold rounded-md px-6 h-10 text-[15px] transition-all duration-200 shadow-lg whitespace-nowrap">
                   Sign-up
-                </button>
+                </button> */}
               </Link>
             </div>
           </div>
@@ -206,12 +206,12 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Link href="/main">
-                <button className="bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/40 text-white font-semibold rounded-full px-8 transition-all duration-300 transform hover:scale-105 active:scale-95 w-full sm:w-auto text-base">
+                <button className="bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/40 text-white font-semibold rounded-full px-10 py-3 transition-all duration-300 transform hover:scale-105 active:scale-95 w-full sm:w-auto text-lg flex items-center justify-center gap-2">
                   Start Creating
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <ArrowRight className="w-5 h-5" />
                 </button>
               </Link>
-              <button className="border-primary/30 hover:border-primary/60 hover:bg-primary/10 text-foreground font-semibold rounded-full px-8 transition-all duration-300 transform hover:scale-105 active:scale-95 text-base border">
+              <button className="border-primary/30 hover:border-primary/60 hover:bg-primary/10 text-foreground font-semibold rounded-full px-10 py-3 transition-all duration-300 transform hover:scale-105 active:scale-95 text-lg border">
                 View Demo
               </button>
             </div>
@@ -361,22 +361,7 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Interactive demo box */}
-          <div className="mt-20 p-8 rounded-xl border border-primary/30 bg-card/40 backdrop-blur-sm hover:border-primary/60 transition-all duration-300 shadow-lg hover:shadow-primary/20">
-            <div className="mb-6">
-              <label className="block text-base font-semibold mb-4 tracking-tight">Try it now:</label>
-              <div className="flex gap-3 flex-col sm:flex-row">
-                <input
-                  type="text"
-                  placeholder="Describe the image you want to create..."
-                  className="flex-1 px-4 py-3 rounded-lg bg-input border border-primary/20 focus:border-primary/60 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 font-light"
-                  defaultValue="A serene waterfall in a misty forest"
-                />
-                <button className="bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/40 text-white font-medium rounded-lg transition-all duration-300">Generate</button>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground font-light">Your images are generated instantly and ready to use commercially.</p>
-          </div>
+
         </div>
       </section>
 

@@ -395,13 +395,15 @@ export default function Home() {
           </div>
 
           {imageUrl && (
-            <div className="mt-16 w-full animate-emerge perspective-container">
-              <div className="card-3d group relative w-full aspect-video bg-[#050505] rounded-3xl border border-white/10 shadow-2xl overflow-hidden cursor-default">
-                <img
-                  src={imageUrl}
-                  alt="AI Generated"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+            <div className="mt-16 w-full max-w-4xl mx-auto px-4 animate-emerge perspective-container">
+              <div className="card-3d group relative w-full bg-[#050505] rounded-3xl border-4 border-blue-500/50 shadow-2xl overflow-hidden cursor-default hover:border-blue-400/80 transition-colors duration-300">
+                <div className="relative w-full h-auto">
+                  <img
+                    src={imageUrl}
+                    alt="AI Generated"
+                    className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
+                  />
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
                   <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                     <h3 className="text-white font-medium text-lg mb-1">
@@ -415,7 +417,7 @@ export default function Home() {
               </div>
               
               {/* Download button below image */}
-              <div className="mt-6 flex justify-center">
+              <div className="mt-8 flex justify-center">
                 <button
                   onClick={handleDownload}
                   className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-full text-white font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105"
